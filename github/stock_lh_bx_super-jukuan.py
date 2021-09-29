@@ -222,7 +222,7 @@ def decisionOrder(context, tracklistbottom, data):
 # 决定是否购买
 def buying(context, data):
     #  时间的设定直接影响到收益及最大回撤
-    if context.current_dt.hour > g.daysell_hour and context.current_dt.minute > g.daysell_min:
+    if context.current_dt.hour > g.daybuy_hour_low and context.current_dt.hour < g.daybuy_hour_high and context.current_dt.minute < g.daybuy_min_high:
         return
     # 先遍历1.2倍动能的票
     preorderlist = g.preorderlist
@@ -729,8 +729,6 @@ def before_trading_start(context):
     except Exception as e:
         # log.error(traceback.format_exc())
         pass
-    if g.industry_new != []:
-        print('重点行业{}'.format(g.industry_new))
 
     g.check_out_lists = longhu_check_stocks(context) + bx_check_stocks(context) + g.super_stock + g.stock_new
     day_buy_list = []
@@ -746,6 +744,7 @@ def before_trading_start(context):
     industry_zero_num = 0
 
     if g.industry_new != []:
+        print('重点行业{}'.format(g.industry_new))
         g.tracklist = []
         temp_check_out_lists = []
         temp_stocknum = mathe.ceil(g.pre_stock_num / len(g.industry_new))
@@ -757,13 +756,12 @@ def before_trading_start(context):
                 continue
             else:
                 temp_check_out_lists = get_rank_new(temp_check_out_lists)
-                if industry_zero_num > 0:
-                    g.tracklist += track_stocks_indus(context, temp_check_out_lists, 2, 16,
-                                                      temp_stocknum * (industry_zero_num + 1))
-                    industry_zero_num = 0
-                else:
-                    g.tracklist += track_stocks_indus(context, temp_check_out_lists, 2, 16, temp_stocknum)
+                g.tracklist += track_stocks_indus(context, temp_check_out_lists, 2, 16, temp_stocknum)
                 # print('{}行业初选{}筛选数量{}'.format(industry,temp_check_out_lists,temp_stocknum))
+        if industry_zero_num > 0:
+            g.check_out_lists = get_rank_new(g.check_out_lists)
+            g.tracklist += track_stocks_indus(context, g.check_out_lists, 2, 16,
+                                              temp_stocknum * industry_zero_num)
     else:
         # 排名分级
         g.check_out_lists = get_rank_new(g.check_out_lists)
